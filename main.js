@@ -1,6 +1,145 @@
 import "aframe";
 import "aframe-physics-system";
 
+// Dithered fog component with culling
+AFRAME.registerComponent("dithered-fog", {
+  init: function () {
+    const scene = this.el.sceneEl;
+
+    scene.addEventListener("loaded", () => {
+      const renderer = scene.renderer;
+      const threeScene = scene.object3D;
+
+      // Enable fog
+      threeScene.fog = new THREE.Fog(0x9db3c8, 50, 150);
+
+      // Disable fog on skybox first
+      const skybox = scene.querySelector("a-sky");
+      if (skybox) {
+        skybox.object3D.traverse((node) => {
+          if (node.material) {
+            node.material.fog = false;
+          }
+        });
+      }
+
+      // Add dither shader to all materials (except those with fog disabled)
+      scene.object3D.traverse((node) => {
+        if (node.material && node.material.fog !== false) {
+          this.addDitherToMaterial(node.material);
+        }
+      });
+
+      // Start culling system
+      this.startCulling();
+    });
+  },
+
+  startCulling: function () {
+    const scene = this.el.sceneEl;
+    const fogFar = 150;
+    const cullDistance = fogFar + 20; // Cull objects 20 units beyond fog
+
+    // Create frustum for view culling
+    this.frustum = new THREE.Frustum();
+    this.cameraMatrix = new THREE.Matrix4();
+
+    // Track all entities with obj-model (but not skybox)
+    this.cullableEntities = [];
+    scene.querySelectorAll("[obj-model]").forEach((el) => {
+      // Skip skybox
+      if (el.tagName === "A-SKY") return;
+
+      // Create bounding box for each entity
+      const bbox = new THREE.Box3();
+      this.cullableEntities.push({
+        el: el,
+        visible: true,
+        bbox: bbox,
+      });
+    });
+
+    // Check visibility every frame
+    this.cullTick = AFRAME.utils.throttle(() => {
+      const camera = document.querySelector("[camera]");
+      if (!camera) return;
+
+      const cameraPos = camera.object3D.position;
+      const threeCamera = camera.getObject3D("camera");
+
+      // Update frustum from camera
+      this.cameraMatrix.multiplyMatrices(
+        threeCamera.projectionMatrix,
+        threeCamera.matrixWorldInverse,
+      );
+      this.frustum.setFromProjectionMatrix(this.cameraMatrix);
+
+      this.cullableEntities.forEach((item) => {
+        const entityPos = item.el.object3D.position;
+        const distance = cameraPos.distanceTo(entityPos);
+
+        // Update bounding box
+        item.bbox.setFromObject(item.el.object3D);
+
+        // Check if bounding box intersects frustum (more accurate than point check)
+        const inView = this.frustum.intersectsBox(item.bbox);
+
+        // Toggle visibility based on distance AND view frustum
+        const shouldBeVisible = distance <= cullDistance && inView;
+
+        if (!shouldBeVisible && item.visible) {
+          item.el.object3D.visible = false;
+          item.visible = false;
+        } else if (shouldBeVisible && !item.visible) {
+          item.el.object3D.visible = true;
+          item.visible = true;
+        }
+      });
+    }, 100); // Throttle to every 100ms for performance
+  },
+
+  tick: function () {
+    if (this.cullTick) {
+      this.cullTick();
+    }
+  },
+
+  addDitherToMaterial: function (material) {
+    if (material.onBeforeCompile && !material.userData.ditherAdded) {
+      material.userData.ditherAdded = true;
+
+      material.onBeforeCompile = (shader) => {
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <fog_fragment>",
+          `
+          #ifdef USE_FOG
+            float ditherPattern(vec2 fragCoord) {
+              const mat4 ditherTable = mat4(
+                0.0, 8.0, 2.0, 10.0,
+                12.0, 4.0, 14.0, 6.0,
+                3.0, 11.0, 1.0, 9.0,
+                15.0, 7.0, 13.0, 5.0
+              );
+              int x = int(mod(fragCoord.x, 4.0));
+              int y = int(mod(fragCoord.y, 4.0));
+              return ditherTable[x][y] / 16.0;
+            }
+
+            float fogDepth = vFogDepth;
+            float fogFactor = smoothstep(fogNear, fogFar, fogDepth);
+            float dither = ditherPattern(gl_FragCoord.xy);
+            fogFactor = step(dither, fogFactor);
+            gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
+          #endif
+          `,
+        );
+      };
+
+      material.needsUpdate = true;
+    }
+  },
+});
+
 // Register bright-sky shader
 AFRAME.registerShader("bright-sky", {
   schema: {
@@ -41,6 +180,7 @@ AFRAME.registerComponent("fps-controller", {
     this.isCrouching = false;
     this.isGrounded = false;
     this.cameraHeight = this.data.standHeight;
+    this.hasLanded = false;
 
     this.onKeyDown = (event) => {
       this.keys[event.code] = true;
@@ -109,6 +249,12 @@ AFRAME.registerComponent("fps-controller", {
       position.y = this.cameraHeight;
       this.velocity.y = 0;
       this.isGrounded = true;
+
+      // Trigger landing event for loading screen
+      if (!this.hasLanded) {
+        this.hasLanded = true;
+        this.el.sceneEl.emit("player-landed");
+      }
     } else {
       this.isGrounded = false;
     }
@@ -463,9 +609,53 @@ AFRAME.registerComponent("ascii-shader", {
 
 // Slider control for pixel sorter
 document.addEventListener("DOMContentLoaded", () => {
+  // Loading screen setup
+  const loadingScreen = document.getElementById("loading-screen");
+  const loadingProgress = document.getElementById("loading-progress");
+  const scene = document.querySelector("a-scene");
+
+  let loadedModels = 0;
+  const totalModels = 74; // 73 Firelink + 1 mushroom + bonfire
+
+  // Update progress bar
+  const updateProgress = () => {
+    const progress = (loadedModels / totalModels) * 100;
+    loadingProgress.style.width = progress + "%";
+  };
+
+  // Listen for model loads
+  scene.addEventListener("model-loaded", () => {
+    loadedModels++;
+    updateProgress();
+  });
+
+  // Track scene loaded state
+  let sceneLoaded = false;
+  let playerLanded = false;
+
+  const checkReadyToHide = () => {
+    if (sceneLoaded && playerLanded) {
+      loadingScreen.classList.add("loaded");
+      setTimeout(() => {
+        loadingScreen.style.display = "none";
+      }, 500); // Wait for fade out animation
+    }
+  };
+
+  // Wait for scene to load
+  scene.addEventListener("loaded", () => {
+    sceneLoaded = true;
+    checkReadyToHide();
+  });
+
+  // Wait for player to hit the ground
+  scene.addEventListener("player-landed", () => {
+    playerLanded = true;
+    checkReadyToHide();
+  });
+
   const slider = document.getElementById("pixel-sorter-slider");
   const valueDisplay = document.getElementById("pixel-sorter-value");
-  const scene = document.querySelector("a-scene");
 
   slider.addEventListener("input", (e) => {
     const value = parseInt(e.target.value);

@@ -178,8 +178,10 @@ AFRAME.registerComponent("fps-controller", {
     this.keys = {};
     this.isCrouching = false;
     this.hasLanded = false;
+    this.isPaused = false;
 
     this.onKeyDown = (event) => {
+      if (this.isPaused) return;
       this.keys[event.code] = true;
 
       // Jump
@@ -200,6 +202,7 @@ AFRAME.registerComponent("fps-controller", {
     };
 
     this.onKeyUp = (event) => {
+      if (this.isPaused) return;
       this.keys[event.code] = false;
     };
 
@@ -231,7 +234,7 @@ AFRAME.registerComponent("fps-controller", {
       }
     }
 
-    if (!body) return;
+    if (!body || this.isPaused) return;
 
     const cameraEl = el.querySelector("[camera]");
     const rotation = cameraEl
@@ -273,6 +276,16 @@ AFRAME.registerComponent("fps-controller", {
       const currentCamY = cameraEl.object3D.position.y;
       cameraEl.object3D.position.y += (targetHeight - currentCamY) * delta * 5;
     }
+  },
+
+  pause: function () {
+    this.isPaused = true;
+    // Clear all keys when paused
+    this.keys = {};
+  },
+
+  play: function () {
+    this.isPaused = false;
   },
 
   remove: function () {

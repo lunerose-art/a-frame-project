@@ -220,6 +220,17 @@ AFRAME.registerComponent("fps-controller", {
   tick: function (time, timeDelta) {
     const el = this.el;
     const body = el.body;
+
+    // Trigger landing event for loading screen (check position-based landing)
+    if (!this.hasLanded) {
+      const position = el.object3D.position;
+      // If player has fallen to near ground level (Y < 10), consider them landed
+      if (position.y < 10 || (body && Math.abs(body.velocity.y) < 0.5)) {
+        this.hasLanded = true;
+        this.el.sceneEl.emit("player-landed");
+      }
+    }
+
     if (!body) return;
 
     const cameraEl = el.querySelector("[camera]");
@@ -255,12 +266,6 @@ AFRAME.registerComponent("fps-controller", {
     // Apply velocity to physics body (preserve Y velocity for gravity/jumping)
     body.velocity.x = moveVector.x;
     body.velocity.z = moveVector.z;
-
-    // Trigger landing event for loading screen
-    if (!this.hasLanded && Math.abs(body.velocity.y) < 0.1) {
-      this.hasLanded = true;
-      this.el.sceneEl.emit("player-landed");
-    }
 
     // Smooth camera height transition
     if (cameraEl) {

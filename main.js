@@ -862,7 +862,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let playerLanded = false;
 
   const checkReadyToHide = () => {
+    console.log("checkReadyToHide:", { sceneLoaded, playerLanded });
     if (sceneLoaded && playerLanded) {
+      console.log("Hiding loading screen");
       loadingScreen.classList.add("loaded");
       setTimeout(() => {
         loadingScreen.style.display = "none";
@@ -872,12 +874,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Wait for scene to load
   scene.addEventListener("loaded", () => {
+    console.log("Scene loaded");
     sceneLoaded = true;
+
+    // Add fallback: hide loading screen after 3 seconds regardless
+    setTimeout(() => {
+      console.log("Fallback: forcing loading screen to hide");
+      playerLanded = true;
+      checkReadyToHide();
+    }, 3000);
+
     checkReadyToHide();
   });
 
   // Wait for player to hit the ground
   scene.addEventListener("player-landed", () => {
+    console.log("Player landed event received");
     playerLanded = true;
     checkReadyToHide();
   });

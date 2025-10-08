@@ -607,6 +607,230 @@ AFRAME.registerComponent("ascii-shader", {
   },
 });
 
+// In-game console system
+AFRAME.registerComponent("game-console", {
+  init: function () {
+    this.isOpen = false;
+    this.consoleHistory = [];
+    this.historyIndex = -1;
+
+    // Create console UI
+    this.consoleDiv = document.createElement("div");
+    this.consoleDiv.id = "game-console";
+    this.consoleDiv.style.display = "none";
+    this.consoleDiv.innerHTML = `
+      <div id="console-output"></div>
+      <div id="console-input-line">
+        <span>> </span>
+        <input type="text" id="console-input" />
+      </div>
+    `;
+    document.body.appendChild(this.consoleDiv);
+
+    this.output = document.getElementById("console-output");
+    this.input = document.getElementById("console-input");
+
+    // Bind backtick key to toggle console
+    this.onKeyDown = (event) => {
+      if (event.key === "`") {
+        event.preventDefault();
+        this.toggle();
+      } else if (this.isOpen) {
+        // Handle command history with arrow keys
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          if (this.historyIndex < this.consoleHistory.length - 1) {
+            this.historyIndex++;
+            this.input.value =
+              this.consoleHistory[
+                this.consoleHistory.length - 1 - this.historyIndex
+              ];
+          }
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          if (this.historyIndex > 0) {
+            this.historyIndex--;
+            this.input.value =
+              this.consoleHistory[
+                this.consoleHistory.length - 1 - this.historyIndex
+              ];
+          } else if (this.historyIndex === 0) {
+            this.historyIndex = -1;
+            this.input.value = "";
+          }
+        }
+      }
+    };
+
+    this.onSubmit = (event) => {
+      if (event.key === "Enter" && this.isOpen) {
+        const command = this.input.value.trim();
+        if (command) {
+          this.executeCommand(command);
+          this.consoleHistory.push(command);
+          this.historyIndex = -1;
+        }
+        this.input.value = "";
+      }
+    };
+
+    window.addEventListener("keydown", this.onKeyDown);
+    this.input.addEventListener("keydown", this.onSubmit);
+
+    this.print("Console initialized. Type 'help' for commands.");
+  },
+
+  toggle: function () {
+    this.isOpen = !this.isOpen;
+    this.consoleDiv.style.display = this.isOpen ? "block" : "none";
+
+    const fpsController = document.querySelector("[fps-controller]");
+    const camera = document.querySelector("[camera]");
+
+    if (this.isOpen) {
+      this.input.focus();
+      // Disable player controls
+      if (fpsController) {
+        fpsController.components["fps-controller"].pause();
+      }
+      if (camera) {
+        camera.setAttribute("look-controls", "enabled", false);
+      }
+    } else {
+      this.input.blur();
+      // Re-enable player controls
+      if (fpsController) {
+        fpsController.components["fps-controller"].play();
+      }
+      if (camera) {
+        camera.setAttribute("look-controls", "enabled", true);
+      }
+    }
+  },
+
+  print: function (text) {
+    const line = document.createElement("div");
+    line.textContent = text;
+    this.output.appendChild(line);
+    this.output.scrollTop = this.output.scrollHeight;
+  },
+
+  executeCommand: function (command) {
+    this.print(`> ${command}`);
+
+    const parts = command.split(" ");
+    const cmd = parts[0].toLowerCase();
+    const args = parts.slice(1);
+
+    switch (cmd) {
+      case "help":
+        this.print("Available commands:");
+        this.print("  help - Show this help");
+        this.print("  clear - Clear console");
+        this.print("  spawn <model> [x] [y] [z] - Spawn object");
+        this.print("  gamemode <edit|play> - Toggle edit mode");
+        this.print("  showcollision - Toggle collision boxes");
+        this.print("  unstuck - Teleport above map");
+        break;
+
+      case "clear":
+        this.output.innerHTML = "";
+        break;
+
+      case "spawn":
+        if (args.length < 1) {
+          this.print("Usage: spawn <model> [x] [y] [z]");
+          return;
+        }
+
+        const modelPath = args[0];
+        let x, y, z;
+
+        if (args.length >= 4) {
+          x = parseFloat(args[1]);
+          y = parseFloat(args[2]);
+          z = parseFloat(args[3]);
+        } else {
+          // Spawn in front of player
+          const camera = document.querySelector("[camera]");
+          const cameraPos = camera.object3D.position;
+          const cameraDir = new THREE.Vector3(0, 0, -1);
+          cameraDir.applyQuaternion(camera.object3D.quaternion);
+          cameraDir.multiplyScalar(5);
+
+          x = cameraPos.x + cameraDir.x;
+          y = cameraPos.y + cameraDir.y;
+          z = cameraPos.z + cameraDir.z;
+        }
+
+        const entity = document.createElement("a-entity");
+        entity.setAttribute("obj-model", `obj: ${modelPath}`);
+        entity.setAttribute("position", `${x} ${y} ${z}`);
+        this.el.sceneEl.appendChild(entity);
+
+        this.print(
+          `Spawned ${modelPath} at ${x.toFixed(2)} ${y.toFixed(2)} ${z.toFixed(2)}`,
+        );
+        break;
+
+      case "gamemode":
+        if (args.length < 1) {
+          this.print("Usage: gamemode <edit|play>");
+          return;
+        }
+
+        const mode = args[0].toLowerCase();
+        if (mode === "edit") {
+          this.print("Edit mode enabled - not yet implemented");
+        } else if (mode === "play") {
+          this.print("Play mode enabled");
+        } else {
+          this.print("Unknown gamemode. Use 'edit' or 'play'");
+        }
+        break;
+
+      case "showcollision":
+        const scene = this.el.sceneEl;
+        scene.object3D.traverse((node) => {
+          if (node.el && node.el.body) {
+            const helper = new THREE.BoxHelper(node, 0x00ff00);
+            scene.object3D.add(helper);
+          }
+        });
+        this.print("Collision boxes visualized");
+        break;
+
+      case "unstuck":
+        const player = document.querySelector("[fps-controller]");
+        if (player) {
+          player.object3D.position.set(0, 70, 0);
+          this.print("Teleported above map - you should fall to ground");
+        }
+        break;
+
+      default:
+        this.print(`Unknown command: ${cmd}`);
+        this.print("Type 'help' for a list of commands");
+    }
+  },
+
+  pause: function () {
+    // Disable key handling when paused
+  },
+
+  play: function () {
+    // Re-enable key handling when unpaused
+  },
+
+  remove: function () {
+    window.removeEventListener("keydown", this.onKeyDown);
+    this.input.removeEventListener("keydown", this.onSubmit);
+    if (this.consoleDiv && this.consoleDiv.parentNode) {
+      this.consoleDiv.parentNode.removeChild(this.consoleDiv);
+    }
+  },
+});
+
 // Slider control for pixel sorter
 document.addEventListener("DOMContentLoaded", () => {
   // Loading screen setup

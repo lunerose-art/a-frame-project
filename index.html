@@ -1,19 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>A-Frame Project</title>
-    <link rel="stylesheet" href="/style.css" />
-  </head>
-  <body>
-    <a-scene>
-      <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
-      <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E"></a-sphere>
-      <a-cylinder position="1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
-      <a-sky color="#ECECEC"></a-sky>
-    </a-scene>
-    <script type="module" src="/main.js"></script>
-  </body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>A-Frame Project</title>
+        <link rel="stylesheet" href="/style.css" />
+    </head>
+    <body>
+        <div id="pixel-sorter-controls">
+            <label for="pixel-sorter-slider">Pixel Sorter</label>
+            <input
+                type="range"
+                id="pixel-sorter-slider"
+                min="0"
+                max="100"
+                value="0"
+            />
+            <span id="pixel-sorter-value">OFF</span>
+        </div>
+        <button id="ascii-shader-btn">ASCII Shader: OFF</button>
+        <a-scene
+            pixel-sorter="enabled: false; threshold: 0.3"
+            ascii-shader="enabled: false"
+            renderer="antialias: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: true; maxCanvasWidth: 1920; maxCanvasHeight: 1080"
+        >
+            <a-entity
+                camera
+                look-controls
+                wasd-controls
+                vertical-controls
+            ></a-entity>
+            <a-light type="ambient" color="#fff" intensity="2"></a-light>
+            <a-light
+                type="directional"
+                color="#fff"
+                intensity="1.2"
+                position="1 2 1"
+            ></a-light>
+            <a-light
+                type="point"
+                color="#fff"
+                intensity="2"
+                distance="10"
+                decay="2"
+                position="0 1 0"
+            ></a-light>
+            <a-entity
+                obj-model="obj: url(/models/c2270.obj); mtl: url(/models/c2270.mtl)"
+                position="0 1 -5"
+                scale="1 1 1"
+                animation="property: position; to: 0 1.2 -5; dir: alternate; loop: true; dur: 1000; easing: easeInOutSine"
+            ></a-entity>
+            <a-sky src="/models/m10_sky.png"></a-sky>
+        </a-scene>
+        <script type="module" src="/main.js"></script>
+    </body>
 </html>

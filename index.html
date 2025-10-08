@@ -22,25 +22,31 @@
         <a-scene
             pixel-sorter="enabled: false; threshold: 0.3"
             ascii-shader="enabled: false"
-            renderer="antialias: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: true; maxCanvasWidth: 1920; maxCanvasHeight: 1080"
+            physics="gravity: -9.8"
+            renderer="antialias: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: false; maxCanvasWidth: 1920; maxCanvasHeight: 1080"
         >
             <a-entity
-                camera
-                look-controls
-                wasd-controls
-                vertical-controls
-            ></a-entity>
-            <a-light type="ambient" color="#fff" intensity="2"></a-light>
+                position="0 1.6 5"
+                fps-controller
+                kinematic-body="shape: sphere; sphereRadius: 0.5"
+            >
+                <a-entity
+                    camera
+                    look-controls="pointerLockEnabled: false"
+                    position="0 0 0"
+                ></a-entity>
+            </a-entity>
+            <a-light type="ambient" color="#fff" intensity="0.8"></a-light>
             <a-light
                 type="directional"
                 color="#fff"
-                intensity="1.2"
+                intensity="0.5"
                 position="1 2 1"
             ></a-light>
             <a-light
                 type="point"
                 color="#fff"
-                intensity="2"
+                intensity="0.8"
                 distance="10"
                 decay="2"
                 position="0 1 0"
@@ -51,6 +57,374 @@
                 scale="1 1 1"
                 animation="property: position; to: 0 1.2 -5; dir: alternate; loop: true; dur: 1000; easing: easeInOutSine"
             ></a-entity>
+
+            <!-- Firelink Shrine complete structure -->
+            <a-entity
+                obj-model="obj: url(/models/m0000B2A10.obj); mtl: url(/models/m0000B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m0030B2A10.obj); mtl: url(/models/m0030B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m0100B2A10.obj); mtl: url(/models/m0100B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m0101B2A10.obj); mtl: url(/models/m0101B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2000B2A10.obj); mtl: url(/models/m2000B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2001B2A10.obj); mtl: url(/models/m2001B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2002B2A10.obj); mtl: url(/models/m2002B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2010B2A10.obj); mtl: url(/models/m2010B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2020B2A10.obj); mtl: url(/models/m2020B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2021B2A10.obj); mtl: url(/models/m2021B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2022B2A10.obj); mtl: url(/models/m2022B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2023B2A10.obj); mtl: url(/models/m2023B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2030B2A10.obj); mtl: url(/models/m2030B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2040B2A10.obj); mtl: url(/models/m2040B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2110B2A10.obj); mtl: url(/models/m2110B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2120B2A10.obj); mtl: url(/models/m2120B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2130B2A10.obj); mtl: url(/models/m2130B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2200B2A10.obj); mtl: url(/models/m2200B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2210B2A10.obj); mtl: url(/models/m2210B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2300B2A10.obj); mtl: url(/models/m2300B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2301B2A10.obj); mtl: url(/models/m2301B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2310B2A10.obj); mtl: url(/models/m2310B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m2901B2A10.obj); mtl: url(/models/m2901B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4000B2A10.obj); mtl: url(/models/m4000B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4001B2A10.obj); mtl: url(/models/m4001B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4002B2A10.obj); mtl: url(/models/m4002B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4010B2A10.obj); mtl: url(/models/m4010B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4011B2A10.obj); mtl: url(/models/m4011B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4012B2A10.obj); mtl: url(/models/m4012B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4013B2A10.obj); mtl: url(/models/m4013B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4100B2A10.obj); mtl: url(/models/m4100B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m4110B2A10.obj); mtl: url(/models/m4110B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5000B2A10.obj); mtl: url(/models/m5000B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5001B2A10.obj); mtl: url(/models/m5001B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5002B2A10.obj); mtl: url(/models/m5002B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5003B2A10.obj); mtl: url(/models/m5003B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5004B2A10.obj); mtl: url(/models/m5004B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5005B2A10.obj); mtl: url(/models/m5005B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5006B2A10.obj); mtl: url(/models/m5006B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5007B2A10.obj); mtl: url(/models/m5007B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5008B2A10.obj); mtl: url(/models/m5008B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5009B2A10.obj); mtl: url(/models/m5009B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5010B2A10.obj); mtl: url(/models/m5010B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5011B2A10.obj); mtl: url(/models/m5011B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5012B2A10.obj); mtl: url(/models/m5012B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5013B2A10.obj); mtl: url(/models/m5013B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5014B2A10.obj); mtl: url(/models/m5014B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5015B2A10.obj); mtl: url(/models/m5015B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5016B2A10.obj); mtl: url(/models/m5016B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5017B2A10.obj); mtl: url(/models/m5017B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5018B2A10.obj); mtl: url(/models/m5018B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5019B2A10.obj); mtl: url(/models/m5019B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5020B2A10.obj); mtl: url(/models/m5020B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5030B2A10.obj); mtl: url(/models/m5030B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5040B2A10.obj); mtl: url(/models/m5040B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5050B2A10.obj); mtl: url(/models/m5050B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5060B2A10.obj); mtl: url(/models/m5060B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5061B2A10.obj); mtl: url(/models/m5061B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5062B2A10.obj); mtl: url(/models/m5062B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5063B2A10.obj); mtl: url(/models/m5063B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m5064B2A10.obj); mtl: url(/models/m5064B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m6000B2A10.obj); mtl: url(/models/m6000B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m6100B2A10.obj); mtl: url(/models/m6100B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m7000B2A10.obj); mtl: url(/models/m7000B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m7010B2A10.obj); mtl: url(/models/m7010B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m7011B2A10.obj); mtl: url(/models/m7011B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m8000B2A10.obj); mtl: url(/models/m8000B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m8100B2A10.obj); mtl: url(/models/m8100B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m8101B2A10.obj); mtl: url(/models/m8101B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m8200B2A10.obj); mtl: url(/models/m8200B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m8500B2A10.obj); mtl: url(/models/m8500B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m9000B2A10.obj); mtl: url(/models/m9000B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+            <a-entity
+                obj-model="obj: url(/models/m9001B2A10.obj); mtl: url(/models/m9001B2A10.mtl)"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+            ></a-entity>
+
             <a-sky src="/models/m10_sky.png"></a-sky>
         </a-scene>
         <script type="module" src="/main.js"></script>

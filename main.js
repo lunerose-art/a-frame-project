@@ -1,4 +1,5 @@
 import "aframe";
+import "aframe-physics-system";
 
 // Register bright-sky shader
 AFRAME.registerShader("bright-sky", {
@@ -25,35 +26,42 @@ AFRAME.registerShader("bright-sky", {
   `,
 });
 
-// Register vertical movement component
-AFRAME.registerComponent("vertical-controls", {
-  init: function () {
-    this.moveUp = false;
-    this.moveDown = false;
-    this.speed = 5;
+// First-person character controller
+AFRAME.registerComponent("fps-controller", {
+  schema: {
+    speed: { type: "number", default: 5 },
+    jumpForce: { type: "number", default: 8 },
+    crouchHeight: { type: "number", default: 0.8 },
+    standHeight: { type: "number", default: 1.6 },
+  },
 
-    // Key down handler
+  init: function () {
+    this.keys = {};
+    this.velocity = new THREE.Vector3();
+    this.isCrouching = false;
+    this.isGrounded = false;
+    this.cameraHeight = this.data.standHeight;
+
     this.onKeyDown = (event) => {
-      switch (event.code) {
-        case "KeyE":
-          this.moveUp = true;
-          break;
-        case "KeyQ":
-          this.moveDown = true;
-          break;
+      this.keys[event.code] = true;
+
+      // Jump
+      if (event.code === "Space" && this.isGrounded) {
+        this.velocity.y = this.data.jumpForce;
+        this.isGrounded = false;
+      }
+
+      // Toggle crouch
+      if (event.code === "KeyC") {
+        this.isCrouching = !this.isCrouching;
+        this.cameraHeight = this.isCrouching
+          ? this.data.crouchHeight
+          : this.data.standHeight;
       }
     };
 
-    // Key up handler
     this.onKeyUp = (event) => {
-      switch (event.code) {
-        case "KeyE":
-          this.moveUp = false;
-          break;
-        case "KeyQ":
-          this.moveDown = false;
-          break;
-      }
+      this.keys[event.code] = false;
     };
 
     window.addEventListener("keydown", this.onKeyDown);
@@ -61,14 +69,59 @@ AFRAME.registerComponent("vertical-controls", {
   },
 
   tick: function (time, timeDelta) {
-    const position = this.el.object3D.position;
-    const delta = (timeDelta / 1000) * this.speed;
+    const el = this.el;
+    const cameraEl = el.querySelector("[camera]");
+    const rotation = cameraEl
+      ? cameraEl.object3D.rotation
+      : el.object3D.rotation;
+    const position = el.object3D.position;
 
-    if (this.moveUp) {
-      position.y += delta;
+    const delta = timeDelta / 1000;
+    const moveVector = new THREE.Vector3();
+
+    // Movement speed (slower when crouching)
+    const currentSpeed = this.isCrouching
+      ? this.data.speed * 0.5
+      : this.data.speed;
+
+    // Horizontal movement
+    if (this.keys.KeyW) {
+      moveVector.z -= currentSpeed * delta;
     }
-    if (this.moveDown) {
-      position.y -= delta;
+    if (this.keys.KeyS) {
+      moveVector.z += currentSpeed * delta;
+    }
+    if (this.keys.KeyA) {
+      moveVector.x -= currentSpeed * delta;
+    }
+    if (this.keys.KeyD) {
+      moveVector.x += currentSpeed * delta;
+    }
+
+    // Apply camera rotation to movement
+    moveVector.applyEuler(new THREE.Euler(0, rotation.y, 0));
+
+    // Apply gravity
+    this.velocity.y -= 20 * delta;
+
+    // Simple ground check
+    if (position.y <= this.cameraHeight) {
+      position.y = this.cameraHeight;
+      this.velocity.y = 0;
+      this.isGrounded = true;
+    } else {
+      this.isGrounded = false;
+    }
+
+    // Apply velocity
+    position.add(moveVector);
+    position.y += this.velocity.y * delta;
+
+    // Smooth camera height transition
+    if (cameraEl) {
+      const targetHeight = this.isCrouching ? -0.4 : 0;
+      const currentCamY = cameraEl.object3D.position.y;
+      cameraEl.object3D.position.y += (targetHeight - currentCamY) * delta * 5;
     }
   },
 
@@ -146,12 +199,16 @@ AFRAME.registerComponent("pixel-sorter", {
 
     let x = 0;
     while (x < width) {
-      // Find start of bright region
+      // Find start of bright region (with alpha check)
       let startX = x;
       while (startX < width) {
         const i = (y * width + startX) * 4;
-        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        if (brightness > threshold) break;
+        const a = data[i + 3];
+        // Skip transparent/background pixels
+        if (a > 10) {
+          const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+          if (brightness > threshold) break;
+        }
         startX++;
       }
 
@@ -161,6 +218,9 @@ AFRAME.registerComponent("pixel-sorter", {
       let endX = startX;
       while (endX < width && endX - startX < sortLength) {
         const i = (y * width + endX) * 4;
+        const a = data[i + 3];
+        // Stop at transparent/background pixels
+        if (a <= 10) break;
         const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
         if (brightness <= threshold) break;
         endX++;

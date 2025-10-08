@@ -35,7 +35,11 @@
             game-console
             renderer="antialias: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: false; maxCanvasWidth: 1920; maxCanvasHeight: 1080"
         >
-            <a-entity position="49.67 62 53.39" fps-controller>
+            <a-entity
+                position="49.67 62 53.39"
+                fps-controller
+                dynamic-body="shape: sphere; mass: 80; linearDamping: 0.9; angularDamping: 1"
+            >
                 <a-entity
                     camera
                     look-controls="pointerLockEnabled: false"

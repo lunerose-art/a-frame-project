@@ -165,38 +165,37 @@ AFRAME.registerShader("bright-sky", {
   `,
 });
 
-// First-person character controller
+// Physics-based first-person controller
 AFRAME.registerComponent("fps-controller", {
   schema: {
     speed: { type: "number", default: 5 },
-    jumpForce: { type: "number", default: 8 },
+    jumpForce: { type: "number", default: 5 },
     crouchHeight: { type: "number", default: 0.8 },
     standHeight: { type: "number", default: 1.6 },
   },
 
   init: function () {
     this.keys = {};
-    this.velocity = new THREE.Vector3();
     this.isCrouching = false;
-    this.isGrounded = false;
-    this.cameraHeight = this.data.standHeight;
     this.hasLanded = false;
 
     this.onKeyDown = (event) => {
       this.keys[event.code] = true;
 
       // Jump
-      if (event.code === "Space" && this.isGrounded) {
-        this.velocity.y = this.data.jumpForce;
-        this.isGrounded = false;
+      if (event.code === "Space") {
+        const body = this.el.body;
+        if (body) {
+          // Check if grounded by checking velocity
+          if (Math.abs(body.velocity.y) < 0.1) {
+            body.velocity.y = this.data.jumpForce;
+          }
+        }
       }
 
       // Toggle crouch
       if (event.code === "KeyC") {
         this.isCrouching = !this.isCrouching;
-        this.cameraHeight = this.isCrouching
-          ? this.data.crouchHeight
-          : this.data.standHeight;
       }
     };
 
@@ -206,15 +205,27 @@ AFRAME.registerComponent("fps-controller", {
 
     window.addEventListener("keydown", this.onKeyDown);
     window.addEventListener("keyup", this.onKeyUp);
+
+    // Wait for physics body to be ready
+    this.el.addEventListener("body-loaded", () => {
+      const body = this.el.body;
+      if (body) {
+        // Prevent body from rotating
+        body.fixedRotation = true;
+        body.updateMassProperties();
+      }
+    });
   },
 
   tick: function (time, timeDelta) {
     const el = this.el;
+    const body = el.body;
+    if (!body) return;
+
     const cameraEl = el.querySelector("[camera]");
     const rotation = cameraEl
       ? cameraEl.object3D.rotation
       : el.object3D.rotation;
-    const position = el.object3D.position;
 
     const delta = timeDelta / 1000;
     const moveVector = new THREE.Vector3();
@@ -226,42 +237,30 @@ AFRAME.registerComponent("fps-controller", {
 
     // Horizontal movement
     if (this.keys.KeyW) {
-      moveVector.z -= currentSpeed * delta;
+      moveVector.z -= currentSpeed;
     }
     if (this.keys.KeyS) {
-      moveVector.z += currentSpeed * delta;
+      moveVector.z += currentSpeed;
     }
     if (this.keys.KeyA) {
-      moveVector.x -= currentSpeed * delta;
+      moveVector.x -= currentSpeed;
     }
     if (this.keys.KeyD) {
-      moveVector.x += currentSpeed * delta;
+      moveVector.x += currentSpeed;
     }
 
     // Apply camera rotation to movement
     moveVector.applyEuler(new THREE.Euler(0, rotation.y, 0));
 
-    // Apply gravity
-    this.velocity.y -= 20 * delta;
+    // Apply velocity to physics body (preserve Y velocity for gravity/jumping)
+    body.velocity.x = moveVector.x;
+    body.velocity.z = moveVector.z;
 
-    // Simple ground check
-    if (position.y <= this.cameraHeight) {
-      position.y = this.cameraHeight;
-      this.velocity.y = 0;
-      this.isGrounded = true;
-
-      // Trigger landing event for loading screen
-      if (!this.hasLanded) {
-        this.hasLanded = true;
-        this.el.sceneEl.emit("player-landed");
-      }
-    } else {
-      this.isGrounded = false;
+    // Trigger landing event for loading screen
+    if (!this.hasLanded && Math.abs(body.velocity.y) < 0.1) {
+      this.hasLanded = true;
+      this.el.sceneEl.emit("player-landed");
     }
-
-    // Apply velocity
-    position.add(moveVector);
-    position.y += this.velocity.y * delta;
 
     // Smooth camera height transition
     if (cameraEl) {

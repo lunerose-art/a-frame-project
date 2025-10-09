@@ -306,6 +306,16 @@ AFRAME.registerComponent("fps-controller", {
       position.x += horizontalMovement.x * delta;
       position.y += verticalMovement * delta;
       position.z += horizontalMovement.z * delta;
+
+      // Debug noclip
+      if (horizontalMovement.length() > 0 || verticalMovement !== 0) {
+        console.log("Noclip moving:", {
+          horizontal: horizontalMovement,
+          vertical: verticalMovement,
+          delta: delta,
+          keys: this.keys,
+        });
+      }
     } else if (body && this.physicsReady) {
       // Use physics-based movement
       body.velocity.x = horizontalMovement.x;

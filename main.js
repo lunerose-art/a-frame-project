@@ -1020,6 +1020,41 @@ AFRAME.registerComponent("game-console", {
   },
 });
 
+// Make materials less glossy/shiny
+AFRAME.registerComponent("matte-materials", {
+  init: function () {
+    const makeMatteRecursive = () => {
+      this.el.object3D.traverse((node) => {
+        if (node.isMesh && node.material) {
+          // Reduce shininess/glossiness
+          if (node.material.shininess !== undefined) {
+            node.material.shininess = 5; // Low shininess (default is 30)
+          }
+
+          // If using standard material, reduce metalness and roughness
+          if (node.material.metalness !== undefined) {
+            node.material.metalness = 0.0;
+            node.material.roughness = 0.9; // Higher roughness = less glossy
+          }
+
+          // If using specular, reduce it
+          if (node.material.specular) {
+            node.material.specular.setRGB(0.1, 0.1, 0.1);
+          }
+
+          node.material.needsUpdate = true;
+        }
+      });
+    };
+
+    // Apply when any model loads in the scene
+    this.el.sceneEl.addEventListener("model-loaded", makeMatteRecursive);
+
+    // Also try after a delay to catch all models
+    setTimeout(makeMatteRecursive, 3000);
+  },
+});
+
 // Debug physics system
 AFRAME.registerComponent("physics-debug", {
   init: function () {

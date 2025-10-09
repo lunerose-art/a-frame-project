@@ -190,8 +190,8 @@ AFRAME.registerComponent("fps-controller", {
       if (this.isPaused) return;
       this.keys[event.code] = true;
 
-      // Jump
-      if (event.code === "Space") {
+      // Jump (skip in noclip mode)
+      if (event.code === "Space" && !this.noclip) {
         const body = this.el.body;
         if (body && this.physicsReady) {
           // Physics-based jump - check if grounded by velocity
@@ -285,29 +285,31 @@ AFRAME.registerComponent("fps-controller", {
       moveVector.x += currentSpeed;
     }
 
-    // Vertical movement for noclip
+    // Apply camera rotation to horizontal movement only
+    const horizontalMovement = new THREE.Vector3(moveVector.x, 0, moveVector.z);
+    horizontalMovement.applyEuler(new THREE.Euler(0, rotation.y, 0));
+
+    // Vertical movement for noclip (applied separately to preserve world-space up/down)
+    let verticalMovement = 0;
     if (this.noclip) {
       if (this.keys.Space) {
-        moveVector.y += currentSpeed;
+        verticalMovement = currentSpeed;
       }
       if (this.keys.ShiftLeft || this.keys.ShiftRight) {
-        moveVector.y -= currentSpeed;
+        verticalMovement = -currentSpeed;
       }
     }
-
-    // Apply camera rotation to movement
-    moveVector.applyEuler(new THREE.Euler(0, rotation.y, 0));
 
     if (this.noclip) {
       // Noclip mode - free movement, no collision
       const position = el.object3D.position;
-      position.x += moveVector.x * delta;
-      position.y += moveVector.y * delta;
-      position.z += moveVector.z * delta;
+      position.x += horizontalMovement.x * delta;
+      position.y += verticalMovement * delta;
+      position.z += horizontalMovement.z * delta;
     } else if (body && this.physicsReady) {
       // Use physics-based movement
-      body.velocity.x = moveVector.x;
-      body.velocity.z = moveVector.z;
+      body.velocity.x = horizontalMovement.x;
+      body.velocity.z = horizontalMovement.z;
 
       // Physics handles gravity and ground collision automatically
     } else {

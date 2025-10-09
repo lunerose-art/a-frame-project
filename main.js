@@ -178,7 +178,7 @@ AFRAME.registerComponent("fps-controller", {
     this.isCrouching = false;
     this.hasLanded = false;
     this.isPaused = false;
-    this.noclip = false; // Noclip mode flag
+    this.noclip = true; // Noclip mode always enabled
 
     // Setup raycaster for collision detection
     this.raycaster = new THREE.Raycaster();

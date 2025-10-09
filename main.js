@@ -12,12 +12,39 @@ AFRAME.registerComponent("dithered-fog", {
       // Enable fog - Dark Souls style (darker, denser, closer)
       threeScene.fog = new THREE.Fog(0x6b7a8c, 20, 80);
 
-      // Disable fog on skybox first
+      // Apply partial haze to skybox
       const skybox = scene.querySelector("a-sky");
       if (skybox) {
         skybox.object3D.traverse((node) => {
           if (node.material) {
+            // Disable normal fog but add custom haze effect
             node.material.fog = false;
+
+            // Store original shader
+            const originalOnBeforeCompile = node.material.onBeforeCompile;
+
+            node.material.onBeforeCompile = (shader) => {
+              if (originalOnBeforeCompile) {
+                originalOnBeforeCompile(shader);
+              }
+
+              // Add fog color uniform
+              shader.uniforms.fogColor = { value: new THREE.Color(0x6b7a8c) };
+              shader.uniforms.hazeStrength = { value: 0.4 }; // 40% haze
+
+              // Modify fragment shader to add haze
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "gl_FragColor = vec4( outgoingLight, diffuseColor.a );",
+                `
+                  vec3 hazeColor = fogColor;
+                  float hazeFactor = hazeStrength;
+                  vec3 finalColor = mix(outgoingLight, hazeColor, hazeFactor);
+                  gl_FragColor = vec4(finalColor, diffuseColor.a);
+                `,
+              );
+            };
+
+            node.material.needsUpdate = true;
           }
         });
       }

@@ -962,8 +962,13 @@ AFRAME.registerComponent("game-console", {
       case "unstuck": {
         const player = document.querySelector("[fps-controller]");
         if (player) {
-          player.object3D.position.set(0, 70, 0);
-          this.print("Teleported above map - you should fall to ground");
+          player.object3D.position.set(49.67, 65, 53.39);
+          // Reset physics velocity if body exists
+          if (player.body) {
+            player.body.velocity.set(0, 0, 0);
+            player.body.angularVelocity.set(0, 0, 0);
+          }
+          this.print("Teleported to spawn point");
         }
         break;
       }

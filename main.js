@@ -183,6 +183,7 @@ AFRAME.registerComponent("fps-controller", {
     // Setup raycaster for collision detection
     this.raycaster = new THREE.Raycaster();
     this.raycaster.far = 0.5; // Check 0.5 units ahead
+    this.obstacles = null; // Cache obstacles
 
     this.onKeyDown = (event) => {
       if (this.isPaused) return;
@@ -288,22 +289,28 @@ AFRAME.registerComponent("fps-controller", {
 
       // Check for collision before moving
       if (moveVector.length() > 0) {
-        const moveDir = moveVector.clone().normalize();
-        this.raycaster.set(position, moveDir);
-
-        // Get all static-body objects to check collision against
-        const obstacles = [];
-        this.el.sceneEl.querySelectorAll("[static-body]").forEach((entity) => {
-          if (entity.object3D) {
-            entity.object3D.traverse((obj) => {
-              if (obj.isMesh) {
-                obstacles.push(obj);
+        // Cache obstacles on first check
+        if (!this.obstacles) {
+          this.obstacles = [];
+          this.el.sceneEl
+            .querySelectorAll("[static-body]")
+            .forEach((entity) => {
+              if (entity.object3D) {
+                entity.object3D.traverse((obj) => {
+                  if (obj.isMesh) {
+                    this.obstacles.push(obj);
+                  }
+                });
               }
             });
-          }
-        });
+        }
 
-        const intersections = this.raycaster.intersectObjects(obstacles, false);
+        const moveDir = moveVector.clone().normalize();
+        this.raycaster.set(position, moveDir);
+        const intersections = this.raycaster.intersectObjects(
+          this.obstacles,
+          false,
+        );
 
         // Only move if no collision or collision is far enough
         if (intersections.length === 0 || intersections[0].distance > 0.5) {

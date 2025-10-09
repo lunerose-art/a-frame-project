@@ -9,8 +9,8 @@ AFRAME.registerComponent("dithered-fog", {
       const renderer = scene.renderer;
       const threeScene = scene.object3D;
 
-      // Enable fog
-      threeScene.fog = new THREE.Fog(0x9db3c8, 50, 150);
+      // Enable fog - Dark Souls style (darker, denser, closer)
+      threeScene.fog = new THREE.Fog(0x6b7a8c, 20, 80);
 
       // Disable fog on skybox first
       const skybox = scene.querySelector("a-sky");
@@ -36,7 +36,7 @@ AFRAME.registerComponent("dithered-fog", {
 
   startCulling: function () {
     const scene = this.el.sceneEl;
-    const fogFar = 150;
+    const fogFar = 80; // Match Dark Souls fog distance
     const cullDistance = fogFar + 20; // Cull objects 20 units beyond fog
 
     // Create frustum for view culling

@@ -266,10 +266,15 @@ AFRAME.registerComponent("fps-controller", {
     const delta = timeDelta / 1000;
     const moveVector = new THREE.Vector3();
 
-    // Movement speed (slower when crouching)
-    const currentSpeed = this.isCrouching
+    // Movement speed (slower when crouching, faster in noclip)
+    let currentSpeed = this.isCrouching
       ? this.data.speed * 0.5
       : this.data.speed;
+
+    // Make noclip faster
+    if (this.noclip) {
+      currentSpeed = this.data.speed * 3; // 3x speed in noclip
+    }
 
     // Horizontal movement
     if (this.keys.KeyW) {
@@ -306,16 +311,6 @@ AFRAME.registerComponent("fps-controller", {
       position.x += horizontalMovement.x * delta;
       position.y += verticalMovement * delta;
       position.z += horizontalMovement.z * delta;
-
-      // Debug noclip
-      if (horizontalMovement.length() > 0 || verticalMovement !== 0) {
-        console.log("Noclip moving:", {
-          horizontal: horizontalMovement,
-          vertical: verticalMovement,
-          delta: delta,
-          keys: this.keys,
-        });
-      }
     } else if (body && this.physicsReady) {
       // Use physics-based movement
       body.velocity.x = horizontalMovement.x;

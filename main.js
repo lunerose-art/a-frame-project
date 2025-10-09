@@ -192,13 +192,13 @@ AFRAME.registerComponent("fps-controller", {
       // Jump
       if (event.code === "Space") {
         const body = this.el.body;
-        if (body) {
-          // Check if grounded by checking velocity
-          if (Math.abs(body.velocity.y) < 0.1) {
+        if (body && this.physicsReady) {
+          // Physics-based jump - check if grounded by velocity
+          if (Math.abs(body.velocity.y) < 0.5) {
             body.velocity.y = this.data.jumpForce;
           }
         } else {
-          // Fallback jump
+          // Fallback jump for when physics not ready
           if (!this.velocity) this.velocity = new THREE.Vector3();
           if (Math.abs(this.velocity.y) < 0.1) {
             this.velocity.y = this.data.jumpForce;
@@ -221,12 +221,20 @@ AFRAME.registerComponent("fps-controller", {
     window.addEventListener("keyup", this.onKeyUp);
 
     // Wait for physics body to be ready
+    this.physicsReady = false;
     this.el.addEventListener("body-loaded", () => {
       const body = this.el.body;
       if (body) {
+        console.log(
+          "✓ Player physics body loaded, switching to physics movement",
+        );
         // Prevent body from rotating
         body.fixedRotation = true;
         body.updateMassProperties();
+        this.physicsReady = true;
+
+        // Clear fallback obstacles cache since we're using physics now
+        this.obstacles = null;
       }
     });
   },
@@ -279,10 +287,12 @@ AFRAME.registerComponent("fps-controller", {
     // Apply camera rotation to movement
     moveVector.applyEuler(new THREE.Euler(0, rotation.y, 0));
 
-    if (body) {
+    if (body && this.physicsReady) {
       // Use physics-based movement
       body.velocity.x = moveVector.x;
       body.velocity.z = moveVector.z;
+
+      // Physics handles gravity and ground collision automatically
     } else {
       // Fallback to manual position updates if physics not ready
       const position = el.object3D.position;

@@ -180,6 +180,10 @@ AFRAME.registerComponent("fps-controller", {
     this.hasLanded = false;
     this.isPaused = false;
 
+    // Setup raycaster for collision detection
+    this.raycaster = new THREE.Raycaster();
+    this.raycaster.far = 0.5; // Check 0.5 units ahead
+
     this.onKeyDown = (event) => {
       if (this.isPaused) return;
       this.keys[event.code] = true;
@@ -191,6 +195,12 @@ AFRAME.registerComponent("fps-controller", {
           // Check if grounded by checking velocity
           if (Math.abs(body.velocity.y) < 0.1) {
             body.velocity.y = this.data.jumpForce;
+          }
+        } else {
+          // Fallback jump
+          if (!this.velocity) this.velocity = new THREE.Vector3();
+          if (Math.abs(this.velocity.y) < 0.1) {
+            this.velocity.y = this.data.jumpForce;
           }
         }
       }
@@ -275,8 +285,32 @@ AFRAME.registerComponent("fps-controller", {
     } else {
       // Fallback to manual position updates if physics not ready
       const position = el.object3D.position;
-      position.x += moveVector.x * delta;
-      position.z += moveVector.z * delta;
+
+      // Check for collision before moving
+      if (moveVector.length() > 0) {
+        const moveDir = moveVector.clone().normalize();
+        this.raycaster.set(position, moveDir);
+
+        // Get all static-body objects to check collision against
+        const obstacles = [];
+        this.el.sceneEl.querySelectorAll("[static-body]").forEach((entity) => {
+          if (entity.object3D) {
+            entity.object3D.traverse((obj) => {
+              if (obj.isMesh) {
+                obstacles.push(obj);
+              }
+            });
+          }
+        });
+
+        const intersections = this.raycaster.intersectObjects(obstacles, false);
+
+        // Only move if no collision or collision is far enough
+        if (intersections.length === 0 || intersections[0].distance > 0.5) {
+          position.x += moveVector.x * delta;
+          position.z += moveVector.z * delta;
+        }
+      }
 
       // Manual gravity
       if (!this.velocity) this.velocity = new THREE.Vector3();

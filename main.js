@@ -17,33 +17,21 @@ AFRAME.registerComponent("dithered-fog", {
       if (skybox) {
         skybox.object3D.traverse((node) => {
           if (node.material) {
-            // Disable normal fog but add custom haze effect
+            // Disable normal fog and add custom haze
             node.material.fog = false;
 
-            // Store original shader
-            const originalOnBeforeCompile = node.material.onBeforeCompile;
+            // Apply color tint to simulate haze
+            const hazeColor = new THREE.Color(0x6b7a8c);
+            const hazeStrength = 0.5;
 
-            node.material.onBeforeCompile = (shader) => {
-              if (originalOnBeforeCompile) {
-                originalOnBeforeCompile(shader);
-              }
+            // Mix the haze color with the material color
+            if (node.material.color) {
+              node.material.color.lerp(hazeColor, hazeStrength);
+            }
 
-              // Add fog color uniform
-              shader.uniforms.fogColor = { value: new THREE.Color(0x6b7a8c) };
-              shader.uniforms.hazeStrength = { value: 0.4 }; // 40% haze
-
-              // Modify fragment shader to add haze
-              shader.fragmentShader = shader.fragmentShader.replace(
-                "gl_FragColor = vec4( outgoingLight, diffuseColor.a );",
-                `
-                  vec3 hazeColor = fogColor;
-                  float hazeFactor = hazeStrength;
-                  vec3 finalColor = mix(outgoingLight, hazeColor, hazeFactor);
-                  gl_FragColor = vec4(finalColor, diffuseColor.a);
-                `,
-              );
-            };
-
+            // Reduce opacity slightly for more haze effect
+            node.material.opacity = 0.85;
+            node.material.transparent = true;
             node.material.needsUpdate = true;
           }
         });

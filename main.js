@@ -981,6 +981,27 @@ AFRAME.registerComponent("game-console", {
   },
 });
 
+// Debug physics system
+AFRAME.registerComponent("physics-debug", {
+  init: function () {
+    console.log("Physics system:", this.el.systems.physics);
+
+    this.el.addEventListener("body-loaded", (evt) => {
+      console.log("Physics body loaded:", evt.target, evt.detail);
+    });
+
+    setTimeout(() => {
+      const player = document.querySelector("[fps-controller]");
+      console.log("Player element:", player);
+      console.log("Player body:", player ? player.body : "no player");
+      console.log(
+        "Player components:",
+        player ? Object.keys(player.components) : "no player",
+      );
+    }, 2000);
+  },
+});
+
 // Slider control for pixel sorter
 document.addEventListener("DOMContentLoaded", () => {
   // Loading screen setup

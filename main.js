@@ -992,13 +992,28 @@ AFRAME.registerComponent("physics-debug", {
 
     setTimeout(() => {
       const player = document.querySelector("[fps-controller]");
+      console.log("=== PLAYER STATUS (2s) ===");
       console.log("Player element:", player);
       console.log("Player body:", player ? player.body : "no player");
+      console.log(
+        "Player has dynamic-body:",
+        player ? player.hasAttribute("dynamic-body") : false,
+      );
       console.log(
         "Player components:",
         player ? Object.keys(player.components) : "no player",
       );
+
+      if (player && !player.body) {
+        console.warn("⚠️ Physics body not initialized - may need manual init");
+      }
     }, 2000);
+
+    setTimeout(() => {
+      const player = document.querySelector("[fps-controller]");
+      console.log("=== PLAYER STATUS (5s) ===");
+      console.log("Player body:", player ? player.body : "no player");
+    }, 5000);
   },
 });
 

@@ -179,6 +179,7 @@ AFRAME.registerComponent("fps-controller", {
     this.isCrouching = false;
     this.hasLanded = false;
     this.isPaused = false;
+    this.noclip = false; // Noclip mode flag
 
     // Setup raycaster for collision detection
     this.raycaster = new THREE.Raycaster();
@@ -284,10 +285,26 @@ AFRAME.registerComponent("fps-controller", {
       moveVector.x += currentSpeed;
     }
 
+    // Vertical movement for noclip
+    if (this.noclip) {
+      if (this.keys.Space) {
+        moveVector.y += currentSpeed;
+      }
+      if (this.keys.ShiftLeft || this.keys.ShiftRight) {
+        moveVector.y -= currentSpeed;
+      }
+    }
+
     // Apply camera rotation to movement
     moveVector.applyEuler(new THREE.Euler(0, rotation.y, 0));
 
-    if (body && this.physicsReady) {
+    if (this.noclip) {
+      // Noclip mode - free movement, no collision
+      const position = el.object3D.position;
+      position.x += moveVector.x * delta;
+      position.y += moveVector.y * delta;
+      position.z += moveVector.z * delta;
+    } else if (body && this.physicsReady) {
       // Use physics-based movement
       body.velocity.x = moveVector.x;
       body.velocity.z = moveVector.z;
@@ -875,6 +892,7 @@ AFRAME.registerComponent("game-console", {
         this.print("  help - Show this help");
         this.print("  clear - Clear console");
         this.print("  pos - Show current position");
+        this.print("  noclip - Toggle noclip mode (fly freely)");
         this.print("  spawn <model> [x] [y] [z] - Spawn object");
         this.print("  gamemode <edit|play> - Toggle edit mode");
         this.print("  showcollision - Toggle collision boxes");
@@ -892,6 +910,19 @@ AFRAME.registerComponent("game-console", {
           this.print(
             `Position: ${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}`,
           );
+        }
+        break;
+      }
+
+      case "noclip": {
+        const player = document.querySelector("[fps-controller]");
+        if (player && player.components["fps-controller"]) {
+          const controller = player.components["fps-controller"];
+          controller.noclip = !controller.noclip;
+          this.print(`Noclip: ${controller.noclip ? "ON" : "OFF"}`);
+          if (controller.noclip) {
+            this.print("Use Space to fly up, Shift to fly down");
+          }
         }
         break;
       }

@@ -1000,7 +1000,7 @@ AFRAME.registerComponent("game-console", {
       case "unstuck": {
         const player = document.querySelector("[fps-controller]");
         if (player) {
-          player.object3D.position.set(0, 65, 0);
+          player.object3D.position.set(10, 61, 10);
           // Reset physics velocity if body exists
           if (player.body) {
             player.body.velocity.set(0, 0, 0);

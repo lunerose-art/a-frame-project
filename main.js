@@ -1,5 +1,4 @@
 import "aframe";
-import "aframe-physics-system";
 
 // Dithered fog component with culling
 AFRAME.registerComponent("dithered-fog", {
@@ -242,13 +241,11 @@ AFRAME.registerComponent("fps-controller", {
 
   tick: function (time, timeDelta) {
     const el = this.el;
-    const body = el.body;
 
-    // Trigger landing event for loading screen (check position-based landing)
+    // Trigger landing event for loading screen
     if (!this.hasLanded) {
       const position = el.object3D.position;
-      // If player has fallen to near ground level (Y < 10), consider them landed
-      if (position.y < 10 || (body && Math.abs(body.velocity.y) < 0.5)) {
+      if (position.y <= 62) {
         this.hasLanded = true;
         this.el.sceneEl.emit("player-landed");
       }
@@ -311,14 +308,8 @@ AFRAME.registerComponent("fps-controller", {
       position.x += horizontalMovement.x * delta;
       position.y += verticalMovement * delta;
       position.z += horizontalMovement.z * delta;
-    } else if (body && this.physicsReady) {
-      // Use physics-based movement
-      body.velocity.x = horizontalMovement.x;
-      body.velocity.z = horizontalMovement.z;
-
-      // Physics handles gravity and ground collision automatically
     } else {
-      // Fallback to manual position updates if physics not ready
+      // Manual movement with collision detection
       const position = el.object3D.position;
 
       // Check for collision before moving

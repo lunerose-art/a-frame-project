@@ -340,16 +340,32 @@ AFRAME.registerComponent("fps-controller", {
           const playerHeight = 1.6;
           const targetY = groundY + playerHeight;
 
-          // If player is close to ground, snap to it
-          if (Math.abs(position.y - targetY) < 0.5) {
-            position.y = targetY;
-            this.velocity.y = 0;
-          } else if (position.y < targetY) {
-            // Player is below ground, push up
-            position.y = targetY;
-            this.velocity.y = 0;
+          const heightDiff = targetY - position.y;
+
+          // Smooth ramp walking - gradually adjust to ground height
+          if (Math.abs(heightDiff) < 2.0) {
+            // Smoothly interpolate to target height for ramps
+            const stepUpSpeed = 10; // Units per second for climbing
+            const maxStep = stepUpSpeed * delta;
+
+            if (Math.abs(heightDiff) < maxStep) {
+              // Close enough, snap to ground
+              position.y = targetY;
+              this.velocity.y = 0;
+            } else if (heightDiff > 0) {
+              // Step up smoothly
+              position.y += maxStep;
+              this.velocity.y = 0;
+            } else {
+              // Step down smoothly
+              position.y -= maxStep;
+              this.velocity.y = 0;
+            }
+          } else if (heightDiff > 0) {
+            // Too high to step up, treat as wall
+            position.y += this.velocity.y * delta;
           } else {
-            // Player is above ground, apply gravity
+            // Falling - apply gravity
             position.y += this.velocity.y * delta;
           }
         } else {

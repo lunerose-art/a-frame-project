@@ -1026,20 +1026,20 @@ AFRAME.registerComponent("matte-materials", {
     const makeMatteRecursive = () => {
       this.el.object3D.traverse((node) => {
         if (node.isMesh && node.material) {
-          // Reduce shininess/glossiness
+          // High shininess for small, tight specular highlights
           if (node.material.shininess !== undefined) {
-            node.material.shininess = 5; // Low shininess (default is 30)
+            node.material.shininess = 100; // High shininess = smaller highlight (default is 30)
           }
 
           // If using standard material, reduce metalness and roughness
           if (node.material.metalness !== undefined) {
             node.material.metalness = 0.0;
-            node.material.roughness = 0.9; // Higher roughness = less glossy
+            node.material.roughness = 0.7; // Moderate roughness for small highlights
           }
 
-          // If using specular, reduce it
+          // Keep specular but make it subtle
           if (node.material.specular) {
-            node.material.specular.setRGB(0.1, 0.1, 0.1);
+            node.material.specular.setRGB(0.3, 0.3, 0.3);
           }
 
           node.material.needsUpdate = true;

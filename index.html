@@ -37,7 +37,7 @@
             renderer="antialias: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: false; maxCanvasWidth: 1920; maxCanvasHeight: 1080"
         >
             <a-entity
-                position="10 61 10"
+                position="10 62 10"
                 fps-controller
                 dynamic-body="shape: sphere; sphereRadius: 0.5; mass: 80; linearDamping: 0.9; angularDamping: 1"
             >
@@ -47,16 +47,16 @@
                     position="0 0 0"
                 ></a-entity>
             </a-entity>
-            <!-- Ground plane for physics - disabled to use mesh collision only -->
-            <!-- <a-plane
-                position="0 59 0"
+            <!-- Ground plane for physics -->
+            <a-plane
+                position="0 60 0"
                 rotation="-90 0 0"
                 width="200"
                 height="200"
                 color="#333333"
                 static-body
                 visible="false"
-            ></a-plane> -->
+            ></a-plane>
 
             <a-light type="ambient" color="#fff" intensity="0.8"></a-light>
             <a-light

@@ -234,13 +234,7 @@ AFRAME.registerComponent("fps-controller", {
       }
     }
 
-    if (!body) {
-      console.warn("No physics body found on player");
-      return;
-    }
-
     if (this.isPaused) {
-      console.log("Player is paused");
       return;
     }
 
@@ -274,17 +268,27 @@ AFRAME.registerComponent("fps-controller", {
     // Apply camera rotation to movement
     moveVector.applyEuler(new THREE.Euler(0, rotation.y, 0));
 
-    // Apply velocity to physics body (preserve Y velocity for gravity/jumping)
-    body.velocity.x = moveVector.x;
-    body.velocity.z = moveVector.z;
+    if (body) {
+      // Use physics-based movement
+      body.velocity.x = moveVector.x;
+      body.velocity.z = moveVector.z;
+    } else {
+      // Fallback to manual position updates if physics not ready
+      const position = el.object3D.position;
+      position.x += moveVector.x * delta;
+      position.z += moveVector.z * delta;
 
-    // Debug: log movement
-    if (moveVector.length() > 0) {
-      console.log("Moving:", {
-        x: body.velocity.x,
-        z: body.velocity.z,
-        keys: this.keys,
-      });
+      // Manual gravity
+      if (!this.velocity) this.velocity = new THREE.Vector3();
+      this.velocity.y -= 20 * delta;
+
+      // Ground check
+      if (position.y <= 1.6) {
+        position.y = 1.6;
+        this.velocity.y = 0;
+      } else {
+        position.y += this.velocity.y * delta;
+      }
     }
 
     // Smooth camera height transition

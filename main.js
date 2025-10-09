@@ -799,6 +799,7 @@ AFRAME.registerComponent("game-console", {
         this.print("Available commands:");
         this.print("  help - Show this help");
         this.print("  clear - Clear console");
+        this.print("  pos - Show current position");
         this.print("  spawn <model> [x] [y] [z] - Spawn object");
         this.print("  gamemode <edit|play> - Toggle edit mode");
         this.print("  showcollision - Toggle collision boxes");
@@ -807,6 +808,16 @@ AFRAME.registerComponent("game-console", {
 
       case "clear":
         this.output.innerHTML = "";
+        break;
+
+      case "pos":
+        const player = document.querySelector("[fps-controller]");
+        if (player) {
+          const pos = player.object3D.position;
+          this.print(
+            `Position: ${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}`,
+          );
+        }
         break;
 
       case "spawn":

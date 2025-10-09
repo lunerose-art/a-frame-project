@@ -234,7 +234,15 @@ AFRAME.registerComponent("fps-controller", {
       }
     }
 
-    if (!body || this.isPaused) return;
+    if (!body) {
+      console.warn("No physics body found on player");
+      return;
+    }
+
+    if (this.isPaused) {
+      console.log("Player is paused");
+      return;
+    }
 
     const cameraEl = el.querySelector("[camera]");
     const rotation = cameraEl
@@ -269,6 +277,15 @@ AFRAME.registerComponent("fps-controller", {
     // Apply velocity to physics body (preserve Y velocity for gravity/jumping)
     body.velocity.x = moveVector.x;
     body.velocity.z = moveVector.z;
+
+    // Debug: log movement
+    if (moveVector.length() > 0) {
+      console.log("Moving:", {
+        x: body.velocity.x,
+        z: body.velocity.z,
+        keys: this.keys,
+      });
+    }
 
     // Smooth camera height transition
     if (cameraEl) {

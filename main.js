@@ -323,12 +323,54 @@ AFRAME.registerComponent("fps-controller", {
       if (!this.velocity) this.velocity = new THREE.Vector3();
       this.velocity.y -= 20 * delta;
 
-      // Ground check
-      if (position.y <= 1.6) {
-        position.y = 1.6;
-        this.velocity.y = 0;
+      // Ground check with raycasting
+      if (this.obstacles) {
+        // Cast ray downward from player position
+        const downDir = new THREE.Vector3(0, -1, 0);
+        this.raycaster.set(position, downDir);
+        this.raycaster.far = 10; // Check up to 10 units below
+
+        const groundIntersections = this.raycaster.intersectObjects(
+          this.obstacles,
+          false,
+        );
+
+        if (groundIntersections.length > 0) {
+          const groundY = groundIntersections[0].point.y;
+          const playerHeight = 1.6;
+          const targetY = groundY + playerHeight;
+
+          // If player is close to ground, snap to it
+          if (Math.abs(position.y - targetY) < 0.5) {
+            position.y = targetY;
+            this.velocity.y = 0;
+          } else if (position.y < targetY) {
+            // Player is below ground, push up
+            position.y = targetY;
+            this.velocity.y = 0;
+          } else {
+            // Player is above ground, apply gravity
+            position.y += this.velocity.y * delta;
+          }
+        } else {
+          // No ground detected, apply gravity and check minimum height
+          position.y += this.velocity.y * delta;
+          if (position.y <= 1.6) {
+            position.y = 1.6;
+            this.velocity.y = 0;
+          }
+        }
+
+        // Reset raycaster far distance for horizontal checks
+        this.raycaster.far = 0.5;
       } else {
-        position.y += this.velocity.y * delta;
+        // Fallback ground check
+        if (position.y <= 1.6) {
+          position.y = 1.6;
+          this.velocity.y = 0;
+        } else {
+          position.y += this.velocity.y * delta;
+        }
       }
     }
 

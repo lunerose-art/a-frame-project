@@ -817,7 +817,7 @@ AFRAME.registerComponent("game-console", {
         this.output.innerHTML = "";
         break;
 
-      case "pos":
+      case "pos": {
         const player = document.querySelector("[fps-controller]");
         if (player) {
           const pos = player.object3D.position;
@@ -826,6 +826,7 @@ AFRAME.registerComponent("game-console", {
           );
         }
         break;
+      }
 
       case "spawn":
         if (args.length < 1) {
@@ -890,13 +891,14 @@ AFRAME.registerComponent("game-console", {
         this.print("Collision boxes visualized");
         break;
 
-      case "unstuck":
+      case "unstuck": {
         const player = document.querySelector("[fps-controller]");
         if (player) {
           player.object3D.position.set(0, 70, 0);
           this.print("Teleported above map - you should fall to ground");
         }
         break;
+      }
 
       default:
         this.print(`Unknown command: ${cmd}`);

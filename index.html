@@ -28,10 +28,12 @@
         </div>
         <button id="ascii-shader-btn">ASCII Shader: OFF</button>
         <a-scene
+            physics="debug: false; gravity: -9.8"
             pixel-sorter="enabled: false; threshold: 0.3"
             ascii-shader="enabled: false"
             dithered-fog
             game-console
+            debug-sphere
             renderer="antialias: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: false; maxCanvasWidth: 1920; maxCanvasHeight: 1080"
         >
             <a-entity position="48.14 3.77 57.19" fps-controller>
@@ -42,21 +44,21 @@
                 ></a-entity>
             </a-entity>
 
-            <a-light type="ambient" color="#fff" intensity="0.8"></a-light>
+            <!-- Foggy day lighting: soft, diffused, cool-toned -->
+            <a-light type="ambient" color="#b0c4d8" intensity="1.2"></a-light>
+            <a-light
+                type="hemisphere"
+                color="#c8d5e5"
+                groundColor="#7a8a9a"
+                intensity="0.6"
+            ></a-light>
             <a-light
                 type="directional"
-                color="#fff"
-                intensity="0.5"
-                position="1 2 1"
+                color="#d4dfe8"
+                intensity="0.3"
+                position="2 5 3"
             ></a-light>
-            <a-light
-                type="point"
-                color="#fff"
-                intensity="0.8"
-                distance="10"
-                decay="2"
-                position="0 1 0"
-            ></a-light>
+
             <!-- Firelink Shrine complete structure -->
             <a-entity position="0 60 0" matte-materials>
                 <a-entity
@@ -425,6 +427,50 @@
                     scale="1 1 1"
                 ></a-entity>
             </a-entity>
+
+            <!-- Bonfire at exact world position -->
+            <a-entity position="51.74 -0.5 55.14">
+                <a-entity
+                    obj-model="obj: url(/models/Bonfire/o0200.obj); mtl: url(/models/Bonfire/o0200.mtl)"
+                    position="0 0 0"
+                    scale="1 1 1"
+                    rotation="0 0 0"
+                    matte-materials
+                ></a-entity>
+                <!-- Fire plane with shader -->
+                <a-plane
+                    width="0.6"
+                    height="1.2"
+                    position="0 0.6 0"
+                    material="shader: bonfire-flame; transparent: true; side: double; blending: additive; depthWrite: false"
+                    billboard
+                ></a-plane>
+                <a-entity bonfire-embers position="0 0.5 0"></a-entity>
+            </a-entity>
+
+            <!-- Purple sphere -->
+            <a-sphere
+                position="47.62 2.63 53.60"
+                radius="1.25"
+                material="shader: textured-purple; color: #9933FF; emissive: #9933FF; emissiveIntensity: 0.3; fog: false"
+                id="purple-sphere"
+                segments-height="64"
+                segments-width="64"
+                dynamic-body="mass: 5; linearDamping: 0.3; angularDamping: 0.3"
+                sphere-collider="radius: 1.25"
+                clickable-physics="force: 20"
+            ></a-sphere>
+
+            <!-- Ground plane with physics -->
+            <a-box
+                position="0 0.11 0"
+                width="1000"
+                height="0.1"
+                depth="1000"
+                color="#333333"
+                static-body
+                visible="false"
+            ></a-box>
 
             <a-sky src="/models/m10_sky.png" rotation="0 180 0"></a-sky>
         </a-scene>

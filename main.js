@@ -1,4 +1,5 @@
 import "aframe";
+import "aframe-physics-system";
 
 // Dithered fog component with culling
 AFRAME.registerComponent("dithered-fog", {
@@ -12,30 +13,23 @@ AFRAME.registerComponent("dithered-fog", {
       // Enable fog - Dark Souls style (darker, denser, closer)
       threeScene.fog = new THREE.Fog(0x6b7a8c, 20, 80);
 
-      // Apply partial haze to skybox
-      const skybox = scene.querySelector("a-sky");
-      if (skybox) {
-        skybox.object3D.traverse((node) => {
-          if (node.material) {
-            // Disable normal fog and add custom haze
-            node.material.fog = false;
-
-            // Apply color tint to simulate haze
-            const hazeColor = new THREE.Color(0x6b7a8c);
-            const hazeStrength = 0.5;
-
-            // Mix the haze color with the material color
-            if (node.material.color) {
-              node.material.color.lerp(hazeColor, hazeStrength);
+      // Enable fog on skybox
+      const applySkyboxFog = () => {
+        const skybox = scene.querySelector("a-sky");
+        if (skybox) {
+          skybox.object3D.traverse((node) => {
+            if (node.material) {
+              node.material.fog = true;
+              node.material.needsUpdate = true;
             }
+          });
+        }
+      };
 
-            // Reduce opacity slightly for more haze effect
-            node.material.opacity = 0.85;
-            node.material.transparent = true;
-            node.material.needsUpdate = true;
-          }
-        });
-      }
+      // Apply with delays to catch the skybox after texture loads
+      setTimeout(applySkyboxFog, 100);
+      setTimeout(applySkyboxFog, 500);
+      setTimeout(applySkyboxFog, 1500);
 
       // Add dither shader to all materials (except those with fog disabled)
       scene.object3D.traverse((node) => {
@@ -58,11 +52,11 @@ AFRAME.registerComponent("dithered-fog", {
     this.frustum = new THREE.Frustum();
     this.cameraMatrix = new THREE.Matrix4();
 
-    // Track all entities with obj-model (but not skybox)
+    // Track all entities with obj-model (but not skybox or primitives)
     this.cullableEntities = [];
     scene.querySelectorAll("[obj-model]").forEach((el) => {
-      // Skip skybox
-      if (el.tagName === "A-SKY") return;
+      // Skip skybox and primitives like spheres
+      if (el.tagName === "A-SKY" || el.tagName === "A-SPHERE") return;
 
       // Create bounding box for each entity
       const bbox = new THREE.Box3();
@@ -119,36 +113,9 @@ AFRAME.registerComponent("dithered-fog", {
   },
 
   addDitherToMaterial: function (material) {
-    if (material.onBeforeCompile && !material.userData.ditherAdded) {
-      material.userData.ditherAdded = true;
-
-      material.onBeforeCompile = (shader) => {
-        shader.fragmentShader = shader.fragmentShader.replace(
-          "#include <fog_fragment>",
-          `
-          #ifdef USE_FOG
-            float ditherPattern(vec2 fragCoord) {
-              const mat4 ditherTable = mat4(
-                0.0, 8.0, 2.0, 10.0,
-                12.0, 4.0, 14.0, 6.0,
-                3.0, 11.0, 1.0, 9.0,
-                15.0, 7.0, 13.0, 5.0
-              );
-              int x = int(mod(fragCoord.x, 4.0));
-              int y = int(mod(fragCoord.y, 4.0));
-              return ditherTable[x][y] / 16.0;
-            }
-
-            float fogDepth = vFogDepth;
-            float fogFactor = smoothstep(fogNear, fogFar, fogDepth);
-            float dither = ditherPattern(gl_FragCoord.xy);
-            fogFactor = step(dither, fogFactor);
-            gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
-          #endif
-          `,
-        );
-      };
-
+    // Simplified - just ensure fog is enabled
+    if (material.fog === undefined) {
+      material.fog = true;
       material.needsUpdate = true;
     }
   },
@@ -260,7 +227,8 @@ AFRAME.registerComponent("fps-controller", {
     // Trigger landing event for loading screen
     if (!this.hasLanded) {
       const position = el.object3D.position;
-      if (position.y <= 62) {
+      // Player starts at Y=3.77, so trigger immediately
+      if (position.y <= 10) {
         this.hasLanded = true;
         this.el.sceneEl.emit("player-landed");
       }
@@ -484,12 +452,13 @@ AFRAME.registerComponent("pixel-sorter", {
 
     if (this.data.enabled) {
       this.sorterCanvas.style.display = "block";
-      webglCanvas.style.display = "none";
+      // Keep WebGL canvas visible for interaction, just hide it visually
+      webglCanvas.style.opacity = "0";
       this.sorterCanvas.width = window.innerWidth;
       this.sorterCanvas.height = window.innerHeight;
     } else {
       this.sorterCanvas.style.display = "none";
-      webglCanvas.style.display = "block";
+      webglCanvas.style.opacity = "1";
     }
   },
 
@@ -679,11 +648,12 @@ AFRAME.registerComponent("ascii-shader", {
 
     if (this.data.enabled) {
       this.asciiCanvas.style.display = "block";
-      webglCanvas.style.display = "none";
+      // Keep WebGL canvas visible for interaction, just hide it visually
+      webglCanvas.style.opacity = "0";
       this.setupAsciiCanvas();
     } else {
       this.asciiCanvas.style.display = "none";
-      webglCanvas.style.display = "block";
+      webglCanvas.style.opacity = "1";
     }
   },
 
@@ -910,6 +880,7 @@ AFRAME.registerComponent("game-console", {
         this.print("  gamemode <edit|play> - Toggle edit mode");
         this.print("  showcollision - Toggle collision boxes");
         this.print("  unstuck - Teleport above map");
+        this.print("  resetsphere - Reset purple sphere to start");
         break;
 
       case "clear":
@@ -1012,6 +983,19 @@ AFRAME.registerComponent("game-console", {
         break;
       }
 
+      case "resetsphere": {
+        const sphere = document.getElementById("purple-sphere");
+        if (sphere && sphere.body) {
+          sphere.body.position.set(47.62, 2.63, 53.6);
+          sphere.body.velocity.set(0, 0, 0);
+          sphere.body.angularVelocity.set(0, 0, 0);
+          this.print("Reset purple sphere to starting position");
+        } else {
+          this.print("Sphere not found or has no physics body");
+        }
+        break;
+      }
+
       default:
         this.print(`Unknown command: ${cmd}`);
         this.print("Type 'help' for a list of commands");
@@ -1031,6 +1015,350 @@ AFRAME.registerComponent("game-console", {
     this.input.removeEventListener("keydown", this.onSubmit);
     if (this.consoleDiv && this.consoleDiv.parentNode) {
       this.consoleDiv.parentNode.removeChild(this.consoleDiv);
+    }
+  },
+});
+
+// Dark Souls style bonfire flame shader
+AFRAME.registerShader("bonfire-flame", {
+  schema: {
+    time: { type: "time", is: "uniform" },
+  },
+
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vPosition;
+
+    void main() {
+      vUv = uv;
+      vPosition = position;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+
+  fragmentShader: `
+    uniform float time;
+    varying vec2 vUv;
+    varying vec3 vPosition;
+
+    // Noise function for fire turbulence
+    float noise(vec2 p) {
+      return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    float smoothNoise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+
+      float a = noise(i);
+      float b = noise(i + vec2(1.0, 0.0));
+      float c = noise(i + vec2(0.0, 1.0));
+      float d = noise(i + vec2(1.0, 1.0));
+
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    }
+
+    float fbm(vec2 p) {
+      float value = 0.0;
+      float amplitude = 0.5;
+      float frequency = 1.0;
+
+      for(int i = 0; i < 4; i++) {
+        value += amplitude * smoothNoise(p * frequency);
+        frequency *= 2.0;
+        amplitude *= 0.5;
+      }
+
+      return value;
+    }
+
+    void main() {
+      vec2 uv = vUv;
+
+      // Make flames rise upward
+      uv.y += time * 0.3;
+
+      // Add turbulence
+      float turbulence = fbm(uv * 3.0 + time * 0.5);
+      uv.x += (turbulence - 0.5) * 0.3;
+
+      // Create flame shape (wider at bottom, narrow at top)
+      float flameShape = smoothstep(0.6, 0.0, abs(vUv.x - 0.5) + vUv.y * 0.5);
+
+      // Add noise to flame
+      float fireNoise = fbm(uv * 4.0);
+      flameShape *= fireNoise;
+
+      // Dark Souls fire colors: intense orange with less yellow
+      vec3 deepOrange = vec3(1.0, 0.3, 0.05);
+      vec3 brightOrange = vec3(1.3, 0.5, 0.1);
+      vec3 hotOrange = vec3(1.5, 0.7, 0.2);
+      vec3 whiteTip = vec3(1.6, 1.2, 0.6);
+
+      // Color gradient based on height - mostly orange
+      vec3 fireColor;
+      if(vUv.y < 0.3) {
+        fireColor = mix(deepOrange, brightOrange, vUv.y / 0.3);
+      } else if(vUv.y < 0.6) {
+        fireColor = mix(brightOrange, hotOrange, (vUv.y - 0.3) / 0.3);
+      } else {
+        fireColor = mix(hotOrange, whiteTip, (vUv.y - 0.6) / 0.4);
+      }
+
+      // Add hot core brightness - more orange
+      float coreGlow = smoothstep(0.4, 0.0, abs(vUv.x - 0.5)) * smoothstep(0.8, 0.2, vUv.y);
+      fireColor += coreGlow * vec3(0.6, 0.2, 0.05);
+
+      // Add brightness flicker - more intense
+      float flicker = 1.0 + 0.3 * sin(time * 4.0 + vUv.y * 10.0);
+      fireColor *= flicker;
+
+      // Alpha based on flame shape and height
+      float alpha = flameShape * smoothstep(1.0, 0.3, vUv.y);
+
+      gl_FragColor = vec4(fireColor, alpha);
+    }
+  `,
+});
+
+// Billboard component - makes element always face camera
+AFRAME.registerComponent("billboard", {
+  init: function () {
+    this.camera = null;
+  },
+
+  tick: function () {
+    if (!this.camera) {
+      this.camera = document.querySelector("[camera]");
+      if (!this.camera) return;
+    }
+
+    const cameraPos = this.camera.object3D.position;
+    const thisPos = this.el.object3D.position;
+
+    // Calculate direction from this object to camera
+    const direction = new THREE.Vector3();
+    direction.subVectors(cameraPos, thisPos);
+
+    // Only rotate on Y axis to keep fire upright
+    direction.y = 0;
+    direction.normalize();
+
+    // Make the plane face the camera
+    this.el.object3D.lookAt(cameraPos);
+  },
+});
+
+// Bonfire embers particle system
+AFRAME.registerComponent("bonfire-embers", {
+  schema: {
+    particleCount: { type: "number", default: 30 },
+    spawnRadius: { type: "number", default: 0.3 },
+    riseSpeed: { type: "number", default: 0.5 },
+    maxHeight: { type: "number", default: 2.5 },
+    glowIntensity: { type: "number", default: 1.5 },
+  },
+
+  init: function () {
+    this.particles = [];
+    this.clock = new THREE.Clock();
+
+    // Create particle geometry and material
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const velocities = [];
+    const lifetimes = [];
+    const sizes = [];
+    const colors = [];
+
+    for (let i = 0; i < this.data.particleCount; i++) {
+      // Spawn near bonfire base
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * this.data.spawnRadius;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const y = Math.random() * 0.15;
+
+      positions.push(x, y, z);
+
+      // More varied velocities
+      velocities.push(
+        (Math.random() - 0.5) * 0.15, // x drift
+        this.data.riseSpeed + Math.random() * 0.5, // upward velocity varied
+        (Math.random() - 0.5) * 0.15, // z drift
+      );
+
+      lifetimes.push(Math.random()); // random starting lifetime
+      sizes.push(0.03 + Math.random() * 0.05); // varied sizes
+
+      // Varied ember colors - deep red to bright orange
+      const colorVariation = Math.random();
+      if (colorVariation < 0.3) {
+        colors.push(1.0, 0.2, 0.05); // Deep red-orange
+      } else if (colorVariation < 0.7) {
+        colors.push(1.0, 0.4, 0.1); // Orange
+      } else {
+        colors.push(1.0, 0.6, 0.2); // Bright orange
+      }
+    }
+
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3),
+    );
+    geometry.setAttribute(
+      "velocity",
+      new THREE.Float32BufferAttribute(velocities, 3),
+    );
+    geometry.setAttribute(
+      "lifetime",
+      new THREE.Float32BufferAttribute(lifetimes, 1),
+    );
+    geometry.setAttribute("size", new THREE.Float32BufferAttribute(sizes, 1));
+    geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+
+    // Custom shader material for realistic embers
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+      },
+      vertexShader: `
+        attribute float size;
+        attribute float lifetime;
+        attribute vec3 color;
+        varying vec3 vColor;
+        varying float vLifetime;
+
+        void main() {
+          vColor = color;
+          vLifetime = lifetime;
+
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+
+          // Fade and shrink with lifetime
+          float fadeSize = size * (1.0 - lifetime * 0.7);
+          gl_PointSize = fadeSize * (300.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        varying float vLifetime;
+
+        void main() {
+          // Circular particle shape
+          vec2 center = gl_PointCoord - vec2(0.5);
+          float dist = length(center);
+
+          if (dist > 0.5) discard;
+
+          // Soft edge falloff
+          float alpha = smoothstep(0.5, 0.2, dist);
+
+          // Fade out with lifetime
+          alpha *= (1.0 - vLifetime);
+
+          // Hot core glow
+          float glow = smoothstep(0.5, 0.0, dist);
+          vec3 glowColor = vColor + vec3(0.3, 0.2, 0.1) * glow;
+
+          // Flicker brightness
+          float flicker = 0.8 + 0.2 * fract(sin(vLifetime * 100.0) * 43758.5);
+
+          gl_FragColor = vec4(glowColor * flicker, alpha * 0.9);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      fog: false,
+    });
+
+    this.particleSystem = new THREE.Points(geometry, material);
+    this.el.object3D.add(this.particleSystem);
+  },
+
+  tick: function (time, timeDelta) {
+    const delta = timeDelta / 1000;
+    const positions = this.particleSystem.geometry.attributes.position;
+    const velocities = this.particleSystem.geometry.attributes.velocity;
+    const lifetimes = this.particleSystem.geometry.attributes.lifetime;
+    const sizes = this.particleSystem.geometry.attributes.size;
+    const colors = this.particleSystem.geometry.attributes.color;
+
+    // Update shader time
+    this.particleSystem.material.uniforms.time.value = time * 0.001;
+
+    for (let i = 0; i < this.data.particleCount; i++) {
+      const i3 = i * 3;
+
+      // Update lifetime
+      lifetimes.array[i] += delta * 0.25;
+
+      // Reset particle if it's too old or too high
+      if (
+        lifetimes.array[i] > 1 ||
+        positions.array[i3 + 1] > this.data.maxHeight
+      ) {
+        // Respawn at base
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * this.data.spawnRadius;
+        positions.array[i3] = Math.cos(angle) * radius;
+        positions.array[i3 + 1] = Math.random() * 0.15;
+        positions.array[i3 + 2] = Math.sin(angle) * radius;
+
+        velocities.array[i3] = (Math.random() - 0.5) * 0.15;
+        velocities.array[i3 + 1] = this.data.riseSpeed + Math.random() * 0.5;
+        velocities.array[i3 + 2] = (Math.random() - 0.5) * 0.15;
+
+        lifetimes.array[i] = 0;
+        sizes.array[i] = 0.03 + Math.random() * 0.05;
+
+        // Randomize color on respawn
+        const colorVariation = Math.random();
+        if (colorVariation < 0.3) {
+          colors.array[i3] = 1.0;
+          colors.array[i3 + 1] = 0.2;
+          colors.array[i3 + 2] = 0.05;
+        } else if (colorVariation < 0.7) {
+          colors.array[i3] = 1.0;
+          colors.array[i3 + 1] = 0.4;
+          colors.array[i3 + 2] = 0.1;
+        } else {
+          colors.array[i3] = 1.0;
+          colors.array[i3 + 1] = 0.6;
+          colors.array[i3 + 2] = 0.2;
+        }
+      } else {
+        // Update position based on velocity
+        positions.array[i3] += velocities.array[i3] * delta;
+        positions.array[i3 + 1] += velocities.array[i3 + 1] * delta;
+        positions.array[i3 + 2] += velocities.array[i3 + 2] * delta;
+
+        // Add turbulence - more chaotic
+        const turbulence = Math.sin(time * 0.002 + i) * 0.002;
+        positions.array[i3] += turbulence;
+        positions.array[i3 + 2] += Math.cos(time * 0.002 + i * 1.5) * 0.002;
+
+        // Slow down as they rise (air resistance)
+        velocities.array[i3 + 1] *= 0.998;
+
+        // Drift more as they age
+        velocities.array[i3] += (Math.random() - 0.5) * 0.001;
+        velocities.array[i3 + 2] += (Math.random() - 0.5) * 0.001;
+      }
+    }
+
+    positions.needsUpdate = true;
+    lifetimes.needsUpdate = true;
+    sizes.needsUpdate = true;
+    colors.needsUpdate = true;
+  },
+
+  remove: function () {
+    if (this.particleSystem) {
+      this.el.object3D.remove(this.particleSystem);
     }
   },
 });
@@ -1106,6 +1434,226 @@ AFRAME.registerComponent("physics-debug", {
   },
 });
 
+// Procedural texture shader for the purple sphere
+AFRAME.registerShader("textured-purple", {
+  schema: {
+    color: { type: "color", default: "#9933FF", is: "uniform" },
+    emissive: { type: "color", default: "#9933FF", is: "uniform" },
+    emissiveIntensity: { type: "number", default: 1.0, is: "uniform" },
+    time: { type: "time", is: "uniform" },
+  },
+
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+
+    void main() {
+      vUv = uv;
+      vNormal = normalize(normalMatrix * normal);
+      vPosition = position;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+
+  fragmentShader: `
+    uniform vec3 color;
+    uniform vec3 emissive;
+    uniform float emissiveIntensity;
+    uniform float time;
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+
+    // Procedural noise for texture
+    float noise(vec3 p) {
+      return fract(sin(dot(p, vec3(12.9898, 78.233, 45.5432))) * 43758.5453);
+    }
+
+    float fbm(vec3 p) {
+      float value = 0.0;
+      float amplitude = 0.5;
+      for(int i = 0; i < 4; i++) {
+        value += amplitude * noise(p);
+        p *= 2.0;
+        amplitude *= 0.5;
+      }
+      return value;
+    }
+
+    void main() {
+      // Create procedural bumpy texture
+      vec3 samplePos = vPosition * 4.0;
+      float pattern = fbm(samplePos);
+
+      // Add some variation to the color based on the pattern
+      vec3 texturedColor = color * (0.7 + pattern * 0.6);
+
+      // Add emissive glow
+      vec3 finalColor = texturedColor + emissive * emissiveIntensity;
+
+      // Basic lighting
+      vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+      float diffuse = max(dot(vNormal, lightDir), 0.0);
+      finalColor *= (0.5 + diffuse * 0.5);
+
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+  `,
+});
+
+// Click and drag component for physics objects
+AFRAME.registerComponent("clickable-physics", {
+  schema: {
+    force: { type: "number", default: 10 },
+  },
+
+  init: function () {
+    this.isGrabbed = false;
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+    this.targetPosition = new THREE.Vector3();
+
+    this.onMouseDown = this.onMouseDown.bind(this);
+    this.onMouseMove = this.onMouseMove.bind(this);
+    this.onMouseUp = this.onMouseUp.bind(this);
+
+    window.addEventListener("mousedown", this.onMouseDown);
+    window.addEventListener("mousemove", this.onMouseMove);
+    window.addEventListener("mouseup", this.onMouseUp);
+  },
+
+  onMouseDown: function (event) {
+    // Update mouse position
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Get camera
+    const camera = document.querySelector("[camera]").getObject3D("camera");
+
+    // Set up raycaster
+    this.raycaster.setFromCamera(this.mouse, camera);
+
+    // Check if we hit this object
+    const intersects = this.raycaster.intersectObject(this.el.object3D, true);
+
+    if (intersects.length > 0) {
+      this.isGrabbed = true;
+      console.log("Grabbed sphere!");
+    }
+  },
+
+  onMouseMove: function (event) {
+    if (!this.isGrabbed) return;
+
+    // Update mouse position
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Get camera
+    const camera = document.querySelector("[camera]").getObject3D("camera");
+
+    // Set up raycaster
+    this.raycaster.setFromCamera(this.mouse, camera);
+
+    // Remember grab distance when first grabbed
+    if (!this.grabDistance) {
+      this.grabDistance = this.raycaster.ray.origin.distanceTo(
+        this.el.object3D.position,
+      );
+    }
+
+    // Project mouse ray to the grab distance
+    this.targetPosition.copy(this.raycaster.ray.direction);
+    this.targetPosition.multiplyScalar(this.grabDistance);
+    this.targetPosition.add(this.raycaster.ray.origin);
+  },
+
+  onMouseUp: function (event) {
+    if (this.isGrabbed) {
+      console.log("Released sphere!");
+    }
+    this.isGrabbed = false;
+    this.grabDistance = null; // Reset for next grab
+  },
+
+  tick: function () {
+    if (!this.isGrabbed) return;
+
+    const body = this.el.body;
+    if (!body) return;
+
+    // Get current position
+    const currentPos = this.el.object3D.position;
+
+    // Calculate force direction
+    const force = new THREE.Vector3();
+    force.subVectors(this.targetPosition, currentPos);
+
+    // Apply much stronger force for aggressive following
+    const strength = this.data.force * 10; // 10x stronger
+    body.applyForce(
+      new CANNON.Vec3(
+        force.x * strength,
+        force.y * strength,
+        force.z * strength,
+      ),
+      new CANNON.Vec3(0, 0, 0),
+    );
+
+    // Much stronger damping for snappy response
+    body.velocity.x *= 0.3;
+    body.velocity.y *= 0.3;
+    body.velocity.z *= 0.3;
+  },
+
+  remove: function () {
+    window.removeEventListener("mousedown", this.onMouseDown);
+    window.removeEventListener("mousemove", this.onMouseMove);
+    window.removeEventListener("mouseup", this.onMouseUp);
+  },
+});
+
+// Debug component to check sphere visibility
+AFRAME.registerComponent("debug-sphere", {
+  init: function () {
+    setTimeout(() => {
+      const sphere = document.getElementById("purple-sphere");
+      console.log("=== SPHERE DEBUG ===");
+      console.log("Sphere element:", sphere);
+      console.log(
+        "Sphere position:",
+        sphere ? sphere.object3D.position : "not found",
+      );
+      console.log(
+        "Sphere visible:",
+        sphere ? sphere.object3D.visible : "not found",
+      );
+      console.log(
+        "Sphere scale:",
+        sphere ? sphere.object3D.scale : "not found",
+      );
+      console.log("Sphere physics body:", sphere ? sphere.body : "not found");
+      console.log("Physics system available:", this.el.sceneEl.systems.physics);
+      console.log(
+        "CANNON available:",
+        typeof CANNON !== "undefined" ? CANNON : "not found",
+      );
+
+      const camera = document.querySelector("[camera]");
+      if (sphere && camera) {
+        const cameraWorldPos = new THREE.Vector3();
+        camera.object3D.getWorldPosition(cameraWorldPos);
+        const spherePos = sphere.object3D.position;
+        const distance = cameraWorldPos.distanceTo(spherePos);
+        console.log("Camera world position:", cameraWorldPos);
+        console.log("Sphere position:", spherePos);
+        console.log("Distance to sphere:", distance);
+      }
+    }, 2000);
+  },
+});
+
 // Slider control for pixel sorter
 document.addEventListener("DOMContentLoaded", () => {
   // Loading screen setup
@@ -1130,11 +1678,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Track scene loaded state
   let sceneLoaded = false;
-  let playerLanded = false;
 
   const checkReadyToHide = () => {
-    console.log("checkReadyToHide:", { sceneLoaded, playerLanded });
-    if (sceneLoaded && playerLanded) {
+    console.log("checkReadyToHide:", { sceneLoaded });
+    if (sceneLoaded) {
       console.log("Hiding loading screen");
       loadingScreen.classList.add("loaded");
       setTimeout(() => {
@@ -1148,21 +1695,11 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Scene loaded");
     sceneLoaded = true;
 
-    // Add fallback: hide loading screen after 3 seconds regardless
+    // Hide loading screen after 1 second
     setTimeout(() => {
-      console.log("Fallback: forcing loading screen to hide");
-      playerLanded = true;
+      console.log("Hiding loading screen after delay");
       checkReadyToHide();
-    }, 3000);
-
-    checkReadyToHide();
-  });
-
-  // Wait for player to hit the ground
-  scene.addEventListener("player-landed", () => {
-    console.log("Player landed event received");
-    playerLanded = true;
-    checkReadyToHide();
+    }, 1000);
   });
 
   const slider = document.getElementById("pixel-sorter-slider");
